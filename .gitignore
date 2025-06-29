@@ -17,3 +17,6 @@ venv/
 # Mac/Windows
 .DS_Store
 Thumbs.db
+
+# Q-Trader++
+app/data_cache/
