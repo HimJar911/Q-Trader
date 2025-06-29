@@ -9,24 +9,26 @@ import re
 import textwrap
 
 
-API_URL = "http://127.0.0.1:8000"
+API_URL = "https://q-trader.onrender.com"
 
 st.set_page_config(layout="wide")
 st.title("💼 Q-Trader++: Quant Strategy Backtester")
 strategy_options = {
-            "sma": "SMA Crossover",
-            "ema": "EMA Crossover",
-            "rsi_sma": "RSI + SMA Hybrid",
-            "macd": "MACD Signal",
-            "bollinger": "Bollinger Bands",
-            "roc": "Momentum (ROC)",
-            "dual_sma": "Dual SMA",
-            "rsi_threshold": "RSI Threshold"
-        }
+    "sma": "SMA Crossover",
+    "ema": "EMA Crossover",
+    "rsi_sma": "RSI + SMA Hybrid",
+    "macd": "MACD Signal",
+    "bollinger": "Bollinger Bands",
+    "roc": "Momentum (ROC)",
+    "dual_sma": "Dual SMA",
+    "rsi_threshold": "RSI Threshold",
+}
 
 # Sidebar navigation
 st.sidebar.title("🧭 Navigation")
-section = st.sidebar.radio("Go to", ["Backtest Strategy", "Compare Strategies", "Generate Strategy"])
+section = st.sidebar.radio(
+    "Go to", ["Backtest Strategy", "Compare Strategies", "Generate Strategy"]
+)
 
 # -------------- COMPARE MULTIPLE STRATEGIES ------------------
 if section == "Compare Strategies":
@@ -41,17 +43,17 @@ if section == "Compare Strategies":
         with col3:
             end = st.date_input("End Date", value=pd.to_datetime("2023-01-01"))
 
-
-
         # 📌 Show in Streamlit
         selected_labels = st.multiselect(
             "Select Strategies",
             options=list(strategy_options.values()),
-            default=["SMA Crossover", "EMA Crossover"]
+            default=["SMA Crossover", "EMA Crossover"],
         )
 
         # 🔁 Map back to internal keys
-        strategies = [key for key, label in strategy_options.items() if label in selected_labels]
+        strategies = [
+            key for key, label in strategy_options.items() if label in selected_labels
+        ]
         short_window = st.slider("Short Window", 5, 50, 20)
         long_window = st.slider("Long Window", 20, 200, 50)
 
@@ -82,19 +84,26 @@ if section == "Compare Strategies":
                     fig = go.Figure()
                     for strat, records in data["equities"].items():
                         df = pd.DataFrame(records)
-                        fig.add_trace(go.Scatter(x=df["date"], y=df["equity"], name=strat.upper()))
+                        fig.add_trace(
+                            go.Scatter(x=df["date"], y=df["equity"], name=strat.upper())
+                        )
                     fig.update_layout(
                         xaxis_title="Date",
                         yaxis_title="Equity",
                         hovermode="x unified",
                         template="plotly_white",
-                        legend=dict(orientation="h")
+                        legend=dict(orientation="h"),
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
                     st.subheader("📊 Strategy Metrics")
                     metric_table = pd.DataFrame(data["metrics"]).T.reset_index()
-                    metric_table.columns = ["Strategy", "Total Return (%)", "Sharpe Ratio", "Max Drawdown (%)"]
+                    metric_table.columns = [
+                        "Strategy",
+                        "Total Return (%)",
+                        "Sharpe Ratio",
+                        "Max Drawdown (%)",
+                    ]
                     st.dataframe(metric_table)
 
             except Exception as e:
@@ -110,7 +119,13 @@ if section == "Backtest Strategy":
 
         fig, ax = plt.subplots(figsize=(12, 5))
         ax.plot(equity_df["date"], equity_df["equity"], label="Strategy", linewidth=2)
-        ax.plot(benchmark_df["date"], benchmark_df["equity"], label="SPY Benchmark", linewidth=2, linestyle="--")
+        ax.plot(
+            benchmark_df["date"],
+            benchmark_df["equity"],
+            label="SPY Benchmark",
+            linewidth=2,
+            linestyle="--",
+        )
         ax.set_xlabel("Date")
         ax.set_ylabel("Equity")
         ax.set_title("Strategy vs SPY (Matplotlib)")
@@ -130,7 +145,9 @@ if section == "Backtest Strategy":
 
         short_window = st.slider("Short MA Window", 5, 100, 20)
         long_window = st.slider("Long MA Window", 10, 200, 50)
-        selected_label = st.selectbox("Strategy Type", options=list(strategy_options.values()))
+        selected_label = st.selectbox(
+            "Strategy Type", options=list(strategy_options.values())
+        )
         strategy = [k for k, v in strategy_options.items() if v == selected_label][0]
 
         submitted = st.form_submit_button("Run Backtest")
@@ -161,48 +178,72 @@ if section == "Backtest Strategy":
                     st.success("✅ Backtest complete!")
 
                     st.subheader("📊 Performance Metrics")
-                    metrics_df = pd.DataFrame(list(result["metrics"].items()), columns=["Metric", "Value"])
+                    metrics_df = pd.DataFrame(
+                        list(result["metrics"].items()), columns=["Metric", "Value"]
+                    )
                     st.dataframe(metrics_df)
 
                     st.subheader("📈 Interactive Equity Curve vs SPY")
                     equity_df = pd.DataFrame(result["equity_curve"])
                     markers_df = pd.DataFrame(result["markers"])
-                    benchmark_df = pd.DataFrame(result.get("benchmark_equity_curve", []))
+                    benchmark_df = pd.DataFrame(
+                        result.get("benchmark_equity_curve", [])
+                    )
 
                     fig = go.Figure()
-                    fig.add_trace(go.Scatter(
-                        x=equity_df["date"], y=equity_df["equity"],
-                        mode="lines", name="Strategy Equity",
-                        line=dict(color="blue")
-                    ))
+                    fig.add_trace(
+                        go.Scatter(
+                            x=equity_df["date"],
+                            y=equity_df["equity"],
+                            mode="lines",
+                            name="Strategy Equity",
+                            line=dict(color="blue"),
+                        )
+                    )
 
                     if not benchmark_df.empty:
-                        fig.add_trace(go.Scatter(
-                            x=benchmark_df["date"], y=benchmark_df["equity"],
-                            mode="lines", name="SPY Benchmark",
-                            line=dict(color="gray", dash="dot")
-                        ))
+                        fig.add_trace(
+                            go.Scatter(
+                                x=benchmark_df["date"],
+                                y=benchmark_df["equity"],
+                                mode="lines",
+                                name="SPY Benchmark",
+                                line=dict(color="gray", dash="dot"),
+                            )
+                        )
 
                     if not markers_df.empty:
                         buys = markers_df[markers_df["type"] == "Buy"]
                         sells = markers_df[markers_df["type"] == "Sell"]
-                        fig.add_trace(go.Scatter(
-                            x=buys["date"], y=buys["equity"],
-                            mode="markers", name="Buy",
-                            marker=dict(symbol="triangle-up", size=10, color="green")
-                        ))
-                        fig.add_trace(go.Scatter(
-                            x=sells["date"], y=sells["equity"],
-                            mode="markers", name="Sell",
-                            marker=dict(symbol="triangle-down", size=10, color="red")
-                        ))
+                        fig.add_trace(
+                            go.Scatter(
+                                x=buys["date"],
+                                y=buys["equity"],
+                                mode="markers",
+                                name="Buy",
+                                marker=dict(
+                                    symbol="triangle-up", size=10, color="green"
+                                ),
+                            )
+                        )
+                        fig.add_trace(
+                            go.Scatter(
+                                x=sells["date"],
+                                y=sells["equity"],
+                                mode="markers",
+                                name="Sell",
+                                marker=dict(
+                                    symbol="triangle-down", size=10, color="red"
+                                ),
+                            )
+                        )
 
                     fig.update_layout(
                         xaxis_title="Date",
                         yaxis_title="Equity",
                         hovermode="x unified",
                         template="plotly_white",
-                        legend=dict(orientation="h")
+                        legend=dict(orientation="h"),
                     )
                     st.plotly_chart(fig, use_container_width=True)
 
@@ -220,7 +261,10 @@ elif section == "Generate Strategy":
     st.header("🤖 Generate Trading Strategy with AI")
 
     with st.form("generate_form"):
-        objective = st.text_area("Your Objective", value="Generate a trading strategy using RSI and moving average for trending markets.")
+        objective = st.text_area(
+            "Your Objective",
+            value="Generate a trading strategy using RSI and moving average for trending markets.",
+        )
         submit_gen = st.form_submit_button("Generate Strategy")
 
     if submit_gen:
@@ -233,18 +277,20 @@ elif section == "Generate Strategy":
                 if response.status_code != 200:
                     st.error(f"❌ Error: {result['detail']}")
                 else:
-                    raw_code = result['code']
+                    raw_code = result["code"]
                     clean_code = re.sub(r"```(?:python)?\s*", "", raw_code)
                     clean_code = re.sub(r"\s*```$", "", clean_code).strip()
 
-                    st.session_state['generated_code'] = clean_code
-                    st.session_state['show_generated_backtest'] = True
+                    st.session_state["generated_code"] = clean_code
+                    st.session_state["show_generated_backtest"] = True
                     st.success("✅ Strategy generated!")
 
             except Exception as e:
                 st.error(f"❌ Exception: {e}")
 
-    if "generated_code" in st.session_state and st.session_state.get("show_generated_backtest"):
+    if "generated_code" in st.session_state and st.session_state.get(
+        "show_generated_backtest"
+    ):
         st.subheader("🧠 Generated Strategy Code")
 
         edited_code = st.text_area(
@@ -252,7 +298,7 @@ elif section == "Generate Strategy":
             value=st.session_state["generated_code"],
             height=400,
             label_visibility="collapsed",
-            key="strategy_editor"
+            key="strategy_editor",
         )
         st.session_state["generated_code"] = edited_code
 
@@ -262,7 +308,10 @@ elif section == "Generate Strategy":
             with col1:
                 symbol = st.text_input("Ticker Symbol", value="AAPL")
             with col2:
-                date_range = st.date_input("Backtest Range", [pd.to_datetime("2022-01-01"), pd.to_datetime("2023-01-01")])
+                date_range = st.date_input(
+                    "Backtest Range",
+                    [pd.to_datetime("2022-01-01"), pd.to_datetime("2023-01-01")],
+                )
 
             submit_backtest = st.form_submit_button("Run Backtest")
 
@@ -270,27 +319,33 @@ elif section == "Generate Strategy":
             with st.spinner("📈 Running backtest..."):
                 try:
                     start_date, end_date = [str(d) for d in date_range]
-                    user_code = st.session_state['generated_code']
+                    user_code = st.session_state["generated_code"]
 
                     if "def strategy(" not in user_code:
-                        wrapper = textwrap.dedent("""
+                        wrapper = textwrap.dedent(
+                            """
                         def strategy(df):
                             return backtest_strategy(df)
-                        """)
+                        """
+                        )
                         user_code += f"\n\n{wrapper}"
 
                     payload = {
                         "symbol": symbol,
                         "start": start_date,
                         "end": end_date,
-                        "code": user_code
+                        "code": user_code,
                     }
 
-                    response = requests.post(f"{API_URL}/run-generated-strategy", json=payload)
+                    response = requests.post(
+                        f"{API_URL}/run-generated-strategy", json=payload
+                    )
                     data = response.json()
 
                     if response.status_code != 200 or "error" in data:
-                        st.error(f"❌ Backtest Error: {data.get('error', response.status_code)}")
+                        st.error(
+                            f"❌ Backtest Error: {data.get('error', response.status_code)}"
+                        )
                         st.stop()
 
                     st.success("✅ Backtest completed!")
@@ -306,12 +361,22 @@ elif section == "Generate Strategy":
                     st.subheader("📈 Equity Curve")
                     equity_df = pd.DataFrame(data["equity"])
                     fig = go.Figure()
-                    fig.add_trace(go.Scatter(x=equity_df["date"], y=equity_df["equity"], mode='lines', name="Equity"))
-                    fig.update_layout(title="Equity Over Time", xaxis_title="Date", yaxis_title="Equity ($)")
+                    fig.add_trace(
+                        go.Scatter(
+                            x=equity_df["date"],
+                            y=equity_df["equity"],
+                            mode="lines",
+                            name="Equity",
+                        )
+                    )
+                    fig.update_layout(
+                        title="Equity Over Time",
+                        xaxis_title="Date",
+                        yaxis_title="Equity ($)",
+                    )
                     st.plotly_chart(fig, use_container_width=True)
 
                 except Exception as e:
                     st.error(f"❌ Exception during backtest: {e}")
 
 # ----------- END FILE -----------
-
