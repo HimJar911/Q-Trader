@@ -4,7 +4,12 @@ import pandas as pd
 import yfinance as yf
 import traceback
 import numpy as np
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+import openai
+openai.api_key = os.getenv("OPENAI_API_KEY")
 router = APIRouter()
 
 class StrategyRunRequest(BaseModel):

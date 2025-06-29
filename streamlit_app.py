@@ -13,6 +13,16 @@ API_URL = "http://127.0.0.1:8000"
 
 st.set_page_config(layout="wide")
 st.title("💼 Q-Trader++: Quant Strategy Backtester")
+strategy_options = {
+            "sma": "SMA Crossover",
+            "ema": "EMA Crossover",
+            "rsi_sma": "RSI + SMA Hybrid",
+            "macd": "MACD Signal",
+            "bollinger": "Bollinger Bands",
+            "roc": "Momentum (ROC)",
+            "dual_sma": "Dual SMA",
+            "rsi_threshold": "RSI Threshold"
+        }
 
 # Sidebar navigation
 st.sidebar.title("🧭 Navigation")
@@ -31,7 +41,17 @@ if section == "Compare Strategies":
         with col3:
             end = st.date_input("End Date", value=pd.to_datetime("2023-01-01"))
 
-        strategies = st.multiselect("Select Strategies", ["sma", "ema", "rsi_sma"], default=["sma", "ema"])
+
+
+        # 📌 Show in Streamlit
+        selected_labels = st.multiselect(
+            "Select Strategies",
+            options=list(strategy_options.values()),
+            default=["SMA Crossover", "EMA Crossover"]
+        )
+
+        # 🔁 Map back to internal keys
+        strategies = [key for key, label in strategy_options.items() if label in selected_labels]
         short_window = st.slider("Short Window", 5, 50, 20)
         long_window = st.slider("Long Window", 20, 200, 50)
 
@@ -48,6 +68,8 @@ if section == "Compare Strategies":
                     "short_window": short_window,
                     "long_window": long_window,
                 }
+                st.write("🛠️ Strategies being sent:", strategies)
+
                 response = requests.get(f"{API_URL}/compare-strategies", params=params)
                 data = response.json()
 
@@ -108,7 +130,8 @@ if section == "Backtest Strategy":
 
         short_window = st.slider("Short MA Window", 5, 100, 20)
         long_window = st.slider("Long MA Window", 10, 200, 50)
-        strategy = st.selectbox("Strategy Type", ["sma", "ema", "rsi_sma"])
+        selected_label = st.selectbox("Strategy Type", options=list(strategy_options.values()))
+        strategy = [k for k, v in strategy_options.items() if v == selected_label][0]
 
         submitted = st.form_submit_button("Run Backtest")
 
