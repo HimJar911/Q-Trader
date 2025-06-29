@@ -8,12 +8,16 @@ from app.routes import metrics, backtest, generate
 from app.performance_metrics import calculate_metrics
 from app.data_loader import fetch_price_data
 from app.strategy_core import sma_crossover_strategy
+from app.routes import run_generated
 from app.backtester import backtest_strategy
+from app.routes import backtest, compare
 
 app = FastAPI()
 app.include_router(metrics.router)
 app.include_router(backtest.router)
 app.include_router(generate.router)
+app.include_router(compare.router)
+app.include_router(run_generated.router)
 
 st.set_page_config(page_title="QTrader++", layout="wide")
 st.title("📈 QTrader++ — Strategy Playground")

@@ -16,6 +16,7 @@ if not api_key:
     raise RuntimeError("OPENAI_API_KEY not found in .env file.")
 
 client = OpenAI(api_key=api_key)
+print("✅ OPENAI_API_KEY Loaded:", api_key)
 
 class StrategyRequest(BaseModel):
     objective: str  # Example: "momentum strategy for NASDAQ tech stocks"
@@ -24,12 +25,19 @@ class StrategyRequest(BaseModel):
 def generate_strategy(payload: StrategyRequest):
     try:
         prompt = f"""
-You're a senior quantitative strategist. Generate a detailed Python backtesting strategy based on this objective:
+    You're a senior quantitative strategist. Generate a robust Python trading strategy for this objective:
 
-Objective: "{payload.objective}"
+    Objective: "{payload.objective}"
 
-Give the response as clean Python code only, with no explanations or markdown. It should define a function that takes a DataFrame with a 'Close' column and returns a 'signal' column (1 for buy, 0 for hold, -1 for sell).
-"""
+    The output must be valid Python code with:
+    - A function named `strategy(df)`
+    - It should take a pandas DataFrame with a 'Close' column
+    - It must return a pandas Series named 'signal' (values: 1 = buy, 0 = hold, -1 = sell)
+    - Use vectorized operations, not apply(), to avoid row-wise ambiguity
+    - Clean and complete, no markdown or explanations
+    """
+
+
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],

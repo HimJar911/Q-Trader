@@ -22,3 +22,13 @@ def evaluate_strategy(data: PortfolioData):
         return {"metrics": metrics}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+def compare_strategy_vs_benchmark(strategy_df, benchmark_df):
+    merged = pd.merge(strategy_df, benchmark_df, left_index=True, right_index=True, how="inner")
+    merged["Strategy Returns"] = merged["Portfolio Value"].pct_change()
+    merged["Benchmark Returns"] = merged["Benchmark"].pct_change()
+
+    merged["Strategy Cumulative"] = (1 + merged["Strategy Returns"]).cumprod()
+    merged["Benchmark Cumulative"] = (1 + merged["Benchmark Returns"]).cumprod()
+
+    return merged
