@@ -1,16 +1,59 @@
-# streamlit_app.py
+# ----------- streamlit_app.py -----------
 
 import streamlit as st
 import requests
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 import pandas as pd
 
-API_URL = "http://127.0.0.1:8000"
+# Interactive equity curve plot
+def plot_equity_curve_interactive(equity_curve, markers):
+    fig = go.Figure()
 
+    # Equity line
+    fig.add_trace(go.Scatter(
+        x=[point["date"] for point in equity_curve],
+        y=[point["equity"] for point in equity_curve],
+        mode="lines",
+        name="Equity",
+        line=dict(color="blue")
+    ))
+
+    # Buy markers
+    buys = [m for m in markers if m["type"] == "Buy"]
+    fig.add_trace(go.Scatter(
+        x=[b["date"] for b in buys],
+        y=[b["equity"] for b in buys],
+        mode="markers",
+        marker=dict(symbol="triangle-up", color="green", size=10),
+        name="Buy"
+    ))
+
+    # Sell markers
+    sells = [m for m in markers if m["type"] == "Sell"]
+    fig.add_trace(go.Scatter(
+        x=[s["date"] for s in sells],
+        y=[s["equity"] for s in sells],
+        mode="markers",
+        marker=dict(symbol="triangle-down", color="red", size=10),
+        name="Sell"
+    ))
+
+    fig.update_layout(
+        title="📈 Equity Over Time",
+        xaxis_title="Date",
+        yaxis_title="Equity",
+        hovermode="x unified",
+        template="plotly_white"
+    )
+
+    return fig
+
+# ---------- CONFIG ----------
+API_URL = "http://127.0.0.1:8000"
 st.set_page_config(layout="wide")
 st.title("💼 Q-Trader++: Quant Strategy Backtester")
 
-# Sidebar navigation
+# ---------- NAVIGATION ----------
 st.sidebar.title("🧭 Navigation")
 section = st.sidebar.radio("Go to", ["Backtest Strategy", "Generate Strategy"])
 
@@ -27,8 +70,10 @@ if section == "Backtest Strategy":
         with col3:
             end = st.date_input("End Date", value=pd.to_datetime("2023-01-01"))
 
-        short_window = st.slider("Short Moving Average Window", 5, 100, 20)
-        long_window = st.slider("Long Moving Average Window", 10, 200, 50)
+        short_window = st.slider("Short MA Window", 5, 100, 20)
+        long_window = st.slider("Long MA Window", 10, 200, 50)
+        strategy = st.selectbox("Strategy Type", ["sma", "ema"])
+
         submitted = st.form_submit_button("Run Backtest")
 
     if submitted:
@@ -40,6 +85,7 @@ if section == "Backtest Strategy":
                     "end": end.strftime("%Y-%m-%d"),
                     "short_window": short_window,
                     "long_window": long_window,
+                    "strategy": strategy,
                 }
                 response = requests.get(f"{API_URL}/backtest", params=params)
                 result = response.json()
@@ -48,8 +94,27 @@ if section == "Backtest Strategy":
                     st.error(f"❌ Error: {result['detail']}")
                 else:
                     st.success("✅ Backtest complete!")
+
+                    # ---- Metrics ----
                     st.subheader("📊 Performance Metrics")
-                    st.write(result["metrics"])
+                    metrics_df = pd.DataFrame(list(result["metrics"].items()), columns=["Metric", "Value"])
+                    st.dataframe(metrics_df)
+
+                    # ---- Interactive Equity Plot ----
+                    st.subheader("🏋️ Equity Curve (Interactive)")
+                    equity_df = pd.DataFrame(result["equity_curve"])
+                    markers_df = pd.DataFrame(result["markers"])
+
+                    equity_data = equity_df.to_dict(orient="records")
+                    markers_data = markers_df.to_dict(orient="records")
+
+                    fig = plot_equity_curve_interactive(equity_data, markers_data)
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # ---- Trade Log ----
+                    st.subheader("🪙 Trade Log")
+                    trades_df = pd.DataFrame(result["trades"])
+                    st.dataframe(trades_df)
 
             except Exception as e:
                 st.error(f"❌ Exception: {e}")
@@ -78,3 +143,5 @@ elif section == "Generate Strategy":
 
             except Exception as e:
                 st.error(f"❌ Exception: {e}")
+
+# ----------- END FILE -----------
